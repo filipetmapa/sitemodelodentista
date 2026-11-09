@@ -1,21 +1,19 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supportsWebGL } from "./store";
+import { isLowPower, supportsWebGL } from "./store";
 
 type Mode = "pending" | "3d" | "static";
-type Ctx = { mode: Mode; rendered: boolean; setRendered: (v: boolean) => void };
+type Ctx = { mode: Mode; rendered: boolean; setRendered: (v: boolean) => void; setMode: (m: Mode) => void };
 
-const ThreeContext = createContext<Ctx>({ mode: "pending", rendered: false, setRendered: () => {} });
+const ThreeContext = createContext<Ctx>({ mode: "pending", rendered: false, setRendered: () => {}, setMode: () => {} });
 export const useThree3D = () => useContext(ThreeContext);
 
-// Canvas único, carregado sob demanda e somente no cliente
-const ThreeCanvas = dynamic(() => import("./ThreeCanvas"), { ssr: false });
-
 /**
- * Decide entre cena 3D e fallback estático e carrega o Canvas apenas quando a
- * seção de tratamentos se aproxima da viewport.
+ * Decide entre cena 3D e imagem estática.
+ * 3D apenas em desktop com WebGL e sem prefers-reduced-motion; no celular e em
+ * aparelhos modestos é exibida a imagem pré-renderizada (muito mais leve).
+ * O 3D só é carregado quando a seção de tratamentos se aproxima.
  */
 export function ThreeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<Mode>("pending");
@@ -23,7 +21,8 @@ export function ThreeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || !supportsWebGL()) {
+    const desktop = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)").matches;
+    if (reduced || !desktop || isLowPower() || !supportsWebGL()) {
       setMode("static");
       return;
     }
@@ -36,16 +35,11 @@ export function ThreeProvider({ children }: { children: ReactNode }) {
           io.disconnect();
         }
       },
-      { rootMargin: "900px 0px" },
+      { rootMargin: "600px 0px" },
     );
     io.observe(target);
     return () => io.disconnect();
   }, []);
 
-  return (
-    <ThreeContext.Provider value={{ mode, rendered, setRendered }}>
-      {children}
-      {mode === "3d" && <ThreeCanvas onReady={() => setRendered(true)} onFail={() => setMode("static")} />}
-    </ThreeContext.Provider>
-  );
+  return <ThreeContext.Provider value={{ mode, rendered, setRendered, setMode }}>{children}</ThreeContext.Provider>;
 }

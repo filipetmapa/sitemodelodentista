@@ -11,6 +11,7 @@ import { MagneticButton } from "@/components/ui/MagneticButton";
 import { RevealText } from "@/components/ui/RevealText";
 import { DotTrack } from "@/components/layout/ScrollProgressDot";
 import { AnchorLink } from "@/components/layout/SmoothScrollProvider";
+import Image from "next/image";
 import { HeroMedia } from "./HeroMedia";
 
 const announceReady = () => {
@@ -35,9 +36,11 @@ export function HeroSection() {
       const fades = q("[data-hero-fade]");
       const buttons = q("[data-hero-btn]");
       const cue = q("[data-hero-cue]");
+      const portrait = q("[data-hero-portrait]");
 
       if (reduced) {
         gsap.set(media, { opacity: 1 });
+        gsap.set(portrait, { opacity: 1 });
         gsap.set(q("h1"), { visibility: "visible" });
         gsap.fromTo(
           [q("h1"), ...fades, ...buttons, ...cue],
@@ -57,6 +60,8 @@ export function HeroSection() {
         .set(q("h1"), { visibility: "visible" })
         // 1–2. mídia surge com fade e zoom 1.08 → 1.0 (2,4s)
         .fromTo(media, { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 2.4, ease: "power2.out" }, 0)
+        // foto da profissional surge com fade e leve subida
+        .fromTo(portrait, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.8, ease: eases.out3 }, 0.5)
         .to(q("[data-hero-eyebrow]"), { opacity: 1, y: 0, duration: durations.base, ease: eases.out3 }, 0.35)
         // 3. título por linhas
         .to(
@@ -90,6 +95,12 @@ export function HeroSection() {
         ease: "none",
         scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
       });
+      // Foto com parallax mais lento que o texto
+      gsap.to(q("[data-hero-portrait-inner]"), {
+        yPercent: 6,
+        ease: "none",
+        scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
+      });
       // Conteúdo se afasta suavemente ao rolar
       gsap.to(q("[data-hero-content]"), {
         y: -60,
@@ -110,6 +121,26 @@ export function HeroSection() {
       className="relative flex min-h-[100svh] flex-col overflow-hidden bg-primary-deep text-bg"
     >
       <HeroMedia />
+      {siteConfig.media.hero.portraitSrc && (
+        // Foto da profissional sobre o fundo atual
+        <div
+          data-hero-portrait=""
+          className="pointer-events-none relative z-[1] mt-[var(--nav-h)] h-[44svh] w-full opacity-0 md:h-[50svh] lg:absolute lg:bottom-0 lg:left-auto lg:right-[6vw] lg:mt-0 lg:h-[88svh] lg:w-[44vw]"
+        >
+          <div data-hero-portrait-inner="" className="relative h-full w-full">
+            <Image
+              src={siteConfig.media.hero.portraitSrc}
+              alt={siteConfig.media.hero.portraitAlt}
+              fill
+              priority
+              sizes="(min-width:1024px) 44vw, 100vw"
+              className="object-contain object-bottom"
+            />
+          </div>
+          {/* leve sombra na base para assentar a foto e manter o texto legível no celular */}
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-primary-deep/80 to-transparent lg:from-primary-deep/50" />
+        </div>
+      )}
       <DotTrack className="z-[2]" />
 
       {/* Linha editorial lateral */}
@@ -121,7 +152,14 @@ export function HeroSection() {
         Odontologia · {siteConfig.address.city}
       </p>
 
-      <div data-hero-content="" className="container-site relative z-[3] flex flex-1 flex-col justify-end pb-[18svh] pt-[calc(var(--nav-h)+10svh)] md:justify-center md:pb-[14svh]">
+      <div
+        data-hero-content=""
+        className={`container-site relative z-[3] flex flex-1 flex-col md:justify-center md:pb-[14svh] ${
+          siteConfig.media.hero.portraitSrc
+            ? "justify-start pb-28 pt-4 lg:pt-[calc(var(--nav-h)+10svh)]"
+            : "justify-end pb-[18svh] pt-[calc(var(--nav-h)+10svh)]"
+        }`}
+      >
         <p data-hero-eyebrow="" data-hero-fade="" className="eyebrow mb-7 text-accent-soft md:mb-9">
           {c.eyebrow}
         </p>

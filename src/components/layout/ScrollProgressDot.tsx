@@ -268,7 +268,7 @@ const builders: Record<string, Builder> = {
 };
 
 // ---------- runtime ----------
-type PieceRT = Piece & { raw: RawPath; len: number; el: SVGPathElement };
+type PieceRT = Piece & { raw: RawPath; len: number; el: SVGPathElement; off?: number };
 type Sample = { cost: number; piece: number; t: number; x: number; y: number };
 type Segment = {
   kind: string;
@@ -452,6 +452,9 @@ export function ScrollProgressDot() {
 
       let activeHalo = false;
       let complete = false;
+      let lastKey = "";
+      let lastX = NaN;
+      let lastY = NaN;
       const update = () => {
         if (!segments.length || !segments[0].samples.length) return;
         // segmento ativo: o último com progresso > 0
@@ -459,6 +462,10 @@ export function ScrollProgressDot() {
         for (let i = 0; i < segments.length; i++) if (segments[i].proxy.p > 0) idx = i;
         const seg = segments[idx];
         const target = seg.proxy.p * seg.total;
+        // nada mudou desde o último quadro: não faz trabalho algum
+        const key = `${idx}:${target.toFixed(1)}:${window.scrollY}:${born}`;
+        if (key === lastKey) return;
+        lastKey = key;
 
         // busca binária no custo acumulado
         const s = seg.samples;
@@ -478,14 +485,17 @@ export function ScrollProgressDot() {
         const piece = seg.pieces[pieceIdx];
         const pt = MotionPathPlugin.getPositionOnPath(piece.raw, t) as { x: number; y: number };
 
-        // linhas desenhadas: todas as anteriores completas
+        // linhas desenhadas: todas as anteriores completas (só escreve o que mudou)
         segments.forEach((sg, si) => {
           sg.pieces.forEach((pc, pi) => {
             let off: number;
             if (si < idx || (si === idx && pi < pieceIdx)) off = 0;
-            else if (si === idx && pi === pieceIdx) off = pc.len * (1 - t);
+            else if (si === idx && pi === pieceIdx) off = Math.round(pc.len * (1 - t) * 2) / 2;
             else off = pc.len;
-            pc.el.style.strokeDashoffset = String(off);
+            if (pc.off !== off) {
+              pc.off = off;
+              pc.el.style.strokeDashoffset = String(off);
+            }
           });
         });
 
@@ -520,13 +530,19 @@ export function ScrollProgressDot() {
         }
 
         const box = seg.svg.getBoundingClientRect();
-        const x = box.left + pt.x;
-        const y = box.top + pt.y;
-        gsap.set(dot, { x, y, opacity: born ? 1 : 0 });
+        const x = Math.round((box.left + pt.x) * 2) / 2;
+        const y = Math.round((box.top + pt.y) * 2) / 2;
+        if (x !== lastX || y !== lastY) {
+          lastX = x;
+          lastY = y;
+          dot.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        }
+        dot.style.opacity = born ? "1" : "0";
       };
 
       const onRefresh = () => {
         build();
+        lastKey = "";
         update();
       };
       ScrollTrigger.addEventListener("refresh", onRefresh);
@@ -550,6 +566,7 @@ export function ScrollProgressDot() {
           seg.root.classList.remove("is-dot-complete");
         });
         dot.style.display = "";
+        dot.style.transform = "";
         dot.className = "narrative-dot";
       };
     });
@@ -588,18 +605,23 @@ export function ScrollProgressDot() {
         start: 0,
         end: "max",
         onUpdate: (self) => {
-          gsap.to(state, { p: self.progress, duration: reduced ? 0 : SCRUB, ease: "power2.out", overwrite: true });
+          gsap.to(state, { p: self.progress, duration: reduced ? 0 : 0.5, ease: "power2.out", overwrite: true });
         },
       });
 
       let born = reduced;
+      let wasBorn = !born;
       const onBorn = () => (born = true);
       window.addEventListener("orvelle:hero-ready", onBorn);
       if ((window as unknown as { __orvelleHeroReady?: boolean }).__orvelleHeroReady) born = true;
 
+      let lastP = -1;
       const update = () => {
         // mapeia o progresso para paradas: o ponto descansa no marcador de cada seção
         const p = state.p;
+        if (Math.abs(p - lastP) < 0.00005 && born === wasBorn) return;
+        lastP = p;
+        wasBorn = born;
         let i = 0;
         for (let k = 0; k < stops.length; k++) if (p >= stops[k]) i = k;
         const a = stops[i] ?? 0;
@@ -610,7 +632,8 @@ export function ScrollProgressDot() {
         const pos = Math.min(1, (i + (i < n ? eased : 0)) / n);
         const yy = (top + (bottom - top) * pos) * window.innerHeight;
         line.setAttribute("y2", `${(yy / window.innerHeight) * 100}%`);
-        gsap.set(dot, { x: 12, y: yy, opacity: born ? 1 : 0 });
+        dot.style.transform = `translate3d(12px, ${Math.round(yy)}px, 0)`;
+        dot.style.opacity = born ? "1" : "0";
       };
 
       ScrollTrigger.addEventListener("refresh", build);

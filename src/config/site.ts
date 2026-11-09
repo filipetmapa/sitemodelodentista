@@ -167,6 +167,12 @@ const media = {
     posterSrc: "/media/hero/hero-fallback.webp", // PLACEHOLDER: substituir por mídia real da clínica
     fallbackImageSrc: "/media/hero/hero-fallback.webp", // PLACEHOLDER: substituir por mídia real da clínica
     fallbackAlt: "Textura de mármore claro sob luz de estúdio, com um arco de porcelana desfocado",
+    // Foto da profissional exibida na hero, sobre o fundo atual.
+    // Ideal: PNG com fundo removido (recorte), vertical, com pelo menos 1600px de altura.
+    portraitSrc: "", // PLACEHOLDER: foto real da profissional
+    portraitWidth: 1200,
+    portraitHeight: 1600,
+    portraitAlt: "Dra. Helena Orvelle, cirurgiã-dentista", // DEMO: substituir por dado real
     objectPositionDesktop: "60% 40%",
     objectPositionMobile: "72% 50%",
   },

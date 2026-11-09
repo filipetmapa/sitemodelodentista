@@ -3,18 +3,13 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { siteConfig } from "@/config/site";
-import { useIsDesktop } from "@/lib/hooks";
 import { useThree3D } from "./ThreeProvider";
-import { isLowPower } from "./store";
 
-const ToothView = dynamic(() => import("./Views").then((m) => m.ToothView), { ssr: false });
-const PillarView = dynamic(() => import("./Views").then((m) => m.PillarView), { ssr: false });
+const ToothCanvas = dynamic(() => import("./ToothCanvas"), { ssr: false });
 
-/** Palco do dente: cena 3D quando disponível; imagem pré-renderizada como fallback. */
+/** Palco do dente: cena 3D no desktop; imagem pré-renderizada no celular e como fallback. */
 export function ToothStage({ className = "" }: { className?: string }) {
-  const { mode, rendered } = useThree3D();
-  const desktop = useIsDesktop();
-  const detail = desktop && !isLowPower() ? 1 : 0.55;
+  const { mode, rendered, setRendered, setMode } = useThree3D();
   return (
     <div className={`relative ${className}`} aria-hidden="true">
       <Image
@@ -24,25 +19,18 @@ export function ToothStage({ className = "" }: { className?: string }) {
         sizes="(min-width:1024px) 40vw, 80vw"
         className={`object-contain transition-opacity duration-700 ${mode === "3d" && rendered ? "opacity-0" : "opacity-100"}`}
       />
-      {mode === "3d" && <ToothView className="absolute inset-0" detail={detail} interactive={desktop} />}
+      {mode === "3d" && <ToothCanvas onReady={() => setRendered(true)} onFail={() => setMode("static")} />}
     </div>
   );
 }
 
+/** Objetos dos diferenciais: imagens pré-renderizadas com flutuação e giro em CSS (leve). */
 export function PillarStage({ index, className = "" }: { index: number; className?: string }) {
-  const { mode, rendered } = useThree3D();
-  const desktop = useIsDesktop();
-  const detail = desktop && !isLowPower() ? 1 : 0.5;
   return (
-    <div className={`relative ${className}`} aria-hidden="true">
-      <Image
-        src={siteConfig.media.pillarsFallback[index]}
-        alt=""
-        fill
-        sizes="200px"
-        className={`object-contain transition-opacity duration-700 ${mode === "3d" && rendered ? "opacity-0" : "opacity-100"}`}
-      />
-      {mode === "3d" && <PillarView index={index} className="absolute inset-0" detail={detail} />}
+    <div className={`pillar-object relative ${className}`} aria-hidden="true">
+      <div className="pillar-float absolute inset-0" style={{ animationDelay: `${index * -1.3}s` }}>
+        <Image src={siteConfig.media.pillarsFallback[index]} alt="" fill sizes="180px" className="object-contain" />
+      </div>
     </div>
   );
 }

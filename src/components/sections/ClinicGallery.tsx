@@ -34,6 +34,7 @@ function GalleryItem({ i, className, aspect, speed, sizes, onOpen }: ItemProps) 
         <span data-zoom="" className="absolute inset-0 block">
           <Image src={img.src} alt={img.alt} fill sizes={sizes} className="object-cover transition-transform duration-1000 ease-out-expo group-hover:scale-[1.03]" />
         </span>
+        <span data-curtain="" className="absolute inset-0 z-[2] origin-top scale-y-0 bg-bg will-change-transform" aria-hidden="true" />
         <span className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center bg-bg/80 text-primary-deep opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-within:opacity-100">
           <Expand size={15} strokeWidth={1.4} aria-hidden="true" />
         </span>
@@ -59,11 +60,11 @@ export function ClinicGallery() {
     const ctx = gsap.context(() => {
       if (reduced) return;
       q("[data-reveal]").forEach((btn) => {
-        // reveal com máscara (clip-path inset) + zoom-out 1.15 → 1.0
+        // reveal com máscara (cortina que se recolhe, só transform) + zoom-out 1.15 → 1.0
         gsap.fromTo(
-          btn,
-          { clipPath: "inset(12% 12% 12% 12%)" },
-          { clipPath: "inset(0% 0% 0% 0%)", duration: 1.5, ease: eases.expo, scrollTrigger: { trigger: btn, start: "top 85%" } },
+          btn.querySelector("[data-curtain]"),
+          { scaleY: 1 },
+          { scaleY: 0, duration: 1.4, ease: eases.expo, scrollTrigger: { trigger: btn, start: "top 85%" } },
         );
         gsap.fromTo(
           btn.querySelector("[data-zoom]"),

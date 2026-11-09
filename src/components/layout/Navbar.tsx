@@ -35,13 +35,11 @@ export function Navbar() {
         initial={false}
         animate={{
           y: hidden && !open ? "-100%" : "0%",
-          backgroundColor: scrolled && !open ? "rgba(247,244,238,0.85)" : "rgba(247,244,238,0)",
+          backgroundColor: scrolled && !open ? "rgba(247,244,238,0.96)" : "rgba(247,244,238,0)",
           borderColor: scrolled && !open ? "rgba(224,204,170,0.7)" : "rgba(224,204,170,0)",
         }}
         transition={{ duration: 0.5, ease: bezier.expo }}
         style={{
-          backdropFilter: scrolled && !open ? "blur(14px)" : "none",
-          WebkitBackdropFilter: scrolled && !open ? "blur(14px)" : "none",
           borderBottomWidth: 1,
           borderBottomStyle: "solid",
         }}
