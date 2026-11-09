@@ -40,7 +40,7 @@ export function HeroSection() {
 
       if (reduced) {
         gsap.set(media, { opacity: 1 });
-        gsap.set(portrait, { opacity: 1 });
+        if (portrait.length) gsap.set(portrait, { opacity: 1 });
         gsap.set(q("h1"), { visibility: "visible" });
         gsap.fromTo(
           [q("h1"), ...fades, ...buttons, ...cue],
@@ -60,8 +60,6 @@ export function HeroSection() {
         .set(q("h1"), { visibility: "visible" })
         // 1–2. mídia surge com fade e zoom 1.08 → 1.0 (2,4s)
         .fromTo(media, { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 2.4, ease: "power2.out" }, 0)
-        // foto da profissional surge com fade e leve subida
-        .fromTo(portrait, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.8, ease: eases.out3 }, 0.5)
         .to(q("[data-hero-eyebrow]"), { opacity: 1, y: 0, duration: durations.base, ease: eases.out3 }, 0.35)
         // 3. título por linhas
         .to(
@@ -95,8 +93,11 @@ export function HeroSection() {
         ease: "none",
         scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
       });
+      // foto da profissional surge com fade e leve subida
+      if (portrait.length) tl.fromTo(portrait, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.8, ease: eases.out3 }, 0.5);
+
       // Foto com parallax mais lento que o texto
-      gsap.to(q("[data-hero-portrait-inner]"), {
+      if (portrait.length) gsap.to(q("[data-hero-portrait-inner]"), {
         yPercent: 6,
         ease: "none",
         scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
